@@ -1,5 +1,7 @@
 package com.devsuperior.dscommerce.controllers;
 
+import com.devsuperior.dscommerce.tests.TokenUtil;
+import groovy.json.JsonException;
 import io.restassured.http.ContentType;
 import org.json.simple.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,41 +11,61 @@ import java.util.*;
 
 import static io.restassured.RestAssured.baseURI;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.*;
 
 public class ProductControllerRA {
 
-    private Long existingProductId, nonExistingProductId;
+    private String clientUsername, clientPassword, adminUsername, adminPassword;
+    private String adminToken, clientToken, invalidToken;
+    private Long existingProductId, nonExistingProductId, dependentProductId;
     private String productName;
 
     private Map<String, Object> postProductInstance;
+    private Map<String, Object> putProductInstance;
 
     @BeforeEach
-    public void setUp() {
+    public void setup() throws JsonException {
         baseURI = "http://localhost:8080";
+
+        clientUsername = "maria@gmail.com";
+        clientPassword = "123456";
+        adminUsername = "alex@gmail.com";
+        adminPassword = "123456";
+
+        clientToken = TokenUtil.obtainAccessToken(clientUsername, clientPassword);
+        adminToken = TokenUtil.obtainAccessToken(adminUsername, adminPassword);
+        invalidToken = adminToken + "xpto";
 
         productName = "Macbook";
 
         postProductInstance = new HashMap<>();
-        postProductInstance.put("name", "Meu produto");
-        postProductInstance.put("description", "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Qui ad, " +
-                "adipisci illum ipsam velit et odit eaque reprehenderit ex maxime delectus dolore labore, quisquam " +
-                "quae tempora natus esse aliquam veniam doloremque quam minima culpa alias maiores commodi. " +
-                "Perferendis enim");
-        postProductInstance.put("imgUrl", "https://raw.githubusercontent.com/devsuperior/dscatalog-resources" +
-                "/master/backend/img/1-big.jpg");
-        postProductInstance.put("price", 50.0);
+        postProductInstance.put("name", "Me 123");
+        postProductInstance.put("description", "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Qui ad, adipisci illum ipsam velit et odit eaque reprehenderit ex maxime delectus dolore labore, quisquam quae tempora natus esse aliquam veniam doloremque quam minima culpa alias maiores commodi. Perferendis enim");
+        postProductInstance.put("imgUrl", "https://raw.githubusercontent.com/devsuperior/dscatalog-resources/master/backend/img/1-big.jpg");
+        postProductInstance.put("price", 20.0);
 
-        List<Map<String, Object>> categories = new ArrayList<>();
+        putProductInstance = new HashMap<>();
+        putProductInstance.put("name", "Produto atualizado");
+        putProductInstance.put("description", "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Qui ad, adipisci illum ipsam velit et odit eaque reprehenderit ex maxime delectus dolore labore, quisquam quae tempora natus esse aliquam veniam doloremque quam minima culpa alias maiores commodi. Perferendis enim");
+        putProductInstance.put("imgUrl", "https://raw.githubusercontent.com/devsuperior/dscatalog-resources/master/backend/img/1-big.jpg");
+        putProductInstance.put("price", 200.0);
+
+        List<Map<String,Object>> categories = new ArrayList<>();
 
         Map<String, Object> category1 = new HashMap<>();
         category1.put("id", 2);
+
         Map<String, Object> category2 = new HashMap<>();
         category2.put("id", 3);
 
-        Arrays.asList(category1, category2).addAll(categories);
+        categories.add(category1);
+        categories.add(category2);
 
         postProductInstance.put("categories", categories);
+        putProductInstance.put("categories", categories);
     }
 
     @Test
@@ -101,13 +123,12 @@ public class ProductControllerRA {
     }
 
     @Test
-    public void insertShouldReturnProductCreatedWhenAdminsLogged() {
+    public void insertShouldReturnProductCreatedWhenAdminsLogged() throws JsonException {
 
         JSONObject newProduct = new JSONObject(postProductInstance);
-        String adminToken = "";
 
         given()
-                .header("content-type", "application/json")
+                .header("Content-type", "application/json")
                 .header("Authorization", "Bearer " + adminToken)
                 .body(newProduct)
                 .contentType(ContentType.JSON)
@@ -116,9 +137,9 @@ public class ProductControllerRA {
                 .post("/products")
                 .then()
                 .statusCode(201)
-                .body("name", equalTo("Meu produto"))
-                .body("price", is(50.0F))
+                .body("name", equalTo("Me 123"))
+                .body("price", is(20.0f))
                 .body("imgUrl", equalTo("https://raw.githubusercontent.com/devsuperior/dscatalog-resources/master/backend/img/1-big.jpg"))
-                .body("categories", hasItems(2,3));
+                .body("categories.id", hasItems(2, 3));
     }
 }
