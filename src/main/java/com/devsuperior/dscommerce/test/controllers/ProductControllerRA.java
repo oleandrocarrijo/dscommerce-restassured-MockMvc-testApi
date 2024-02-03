@@ -1,4 +1,4 @@
-package com.devsuperior.dscommerce.controllers;
+package com.devsuperior.dscommerce.test.controllers;
 
 import com.devsuperior.dscommerce.tests.TokenUtil;
 import groovy.json.JsonException;
@@ -40,6 +40,7 @@ public class ProductControllerRA {
         invalidToken = adminToken + "xpto";
 
         productName = "Macbook";
+        existingProductId = 1L;
 
         postProductInstance = new HashMap<>();
         postProductInstance.put("name", "Me 123");
@@ -263,6 +264,69 @@ public class ProductControllerRA {
                 .accept(ContentType.JSON)
                 .when()
                 .post("/products")
+                .then()
+                .statusCode(401);
+    }
+
+    @Test
+    public void deleteShouldReturnNoContentWhenAdminLoggedAndIdExists() {
+
+        existingProductId = 10L;
+
+        given()
+                .header("Content-type", "application/json")
+                .header("Authorization", "Bearer " + adminToken)
+                .delete("/products/{id}", existingProductId)
+                .then()
+                .statusCode(204);
+    }
+
+    @Test
+    public void deleteShouldReturnNotFoundWhenAdminLoggedAndIdDoesNotExists() {
+
+        nonExistingProductId = 250L;
+
+        given()
+                .header("Content-type", "application/json")
+                .header("Authorization", "Bearer " + adminToken)
+                .delete("/products/{id}", nonExistingProductId)
+                .then()
+                .statusCode(404)
+                .body("error", equalTo("Recurso não encontrado"))
+                .body("status", equalTo(404));
+    }
+
+    @Test
+    public void deleteShouldReturnBadRequestWhenAdminLoggedAndDependentId() {
+
+        dependentProductId = 3L;
+
+        given()
+                .header("Content-type", "application/json")
+                .header("Authorization", "Bearer " + adminToken)
+                .delete("/products/{id}", dependentProductId)
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
+    public void deleteShouldReturnForbiddenWhenClientLogged() {
+
+        given()
+                .header("Content-type", "application/json")
+                .header("Authorization", "Bearer " + clientToken)
+                .delete("/products/{id}", existingProductId)
+                .then()
+                .statusCode(403);
+    }
+
+    @Test
+    public void deleteShouldReturnUnauthorizedWhenClientLogged() {
+
+        given()
+                .header("Content-type", "application/json")
+                .header("Authorization", "Bearer " + invalidToken)
+                .delete("/products/{id}", existingProductId)
                 .then()
                 .statusCode(401);
     }
