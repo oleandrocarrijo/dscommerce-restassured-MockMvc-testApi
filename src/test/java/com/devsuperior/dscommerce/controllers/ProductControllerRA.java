@@ -1,4 +1,4 @@
-package com.devsuperior.dscommerce.test.controllers;
+package com.devsuperior.dscommerce.controllers;
 
 import com.devsuperior.dscommerce.tests.TokenUtil;
 import groovy.json.JsonException;
@@ -14,7 +14,6 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.*;
 
 public class ProductControllerRA {
 
